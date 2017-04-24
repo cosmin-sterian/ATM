@@ -1,20 +1,10 @@
-CC=gcc
-LIBSOCKET=-lnsl
-CCFLAGS=-Wall -g
-SRV=server
-SEL_SRV=selectserver
-CLT=client
+build: client server
 
-all: $(SEL_SRV) $(CLT)
+client: client.c utils.h
+	gcc -g -Wall client.c -o client
 
-$(SEL_SRV):$(SEL_SRV).c
-	$(CC) -o $(SEL_SRV) $(LIBSOCKET) $(SEL_SRV).c
-
-$(CLT):	$(CLT).c
-	$(CC) -o $(CLT) $(LIBSOCKET) $(CLT).c
+server: server.c utils.h
+	gcc -g -Wall server.c -o server
 
 clean:
-	rm -f *.o *~
-	rm -f $(SEL_SRV) $(CLT)
-
-
+	rm -rf server client *.log
