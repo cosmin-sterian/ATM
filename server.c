@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
      sockfd = socket(AF_INET, SOCK_STREAM, 0);
      if (sockfd < 0)
-        error("ERROR opening socket");
+        error("ERROR opening TCP socket");
 
      portno = atoi(argv[1]);
 
@@ -78,17 +78,28 @@ int main(int argc, char *argv[])
      serv_addr.sin_port = htons(portno);
 
      if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0)
-              error("ERROR on binding");
+              error("ERROR on binding TCP");
 
      listen(sockfd, MAX_CLIENTS);
 
+     //UDP
+     int sockfd_udp;
+     sockfd_udp = socket(AF_INET, SOCK_DGRAM, 0);
+     if(sockfd_udp < 0)
+     	error("ERROR opening UDP socket");
+
+     if(bind(sockfd_udp, (struct sockaddr*) &serv_addr, sizeof(struct sockaddr)) < 0)
+     	error("ERROR on binding UDP");
+
      //adaugam noul file descriptor (socketul pe care se asculta conexiuni) in multimea read_fds
      FD_SET(sockfd, &read_fds);
+     FD_SET(sockfd_udp, &read_fds);	//UDP
      FD_SET(0, &read_fds);
-     fdmax = sockfd;
+     fdmax = (sockfd > sockfd_udp) ? sockfd : sockfd_udp;
 	 int i, n, current, skip = 0, j;
 	 int nr_card, pin, suma;
 	 double suma_depusa;
+	 char parola[17];
 
 	 FILE *in = fopen(argv[2], "r");
 	 fscanf(in, "%d", &n);
@@ -112,7 +123,6 @@ int main(int argc, char *argv[])
 			if(FD_ISSET(i, &read_fds)) {
 				if(i == 0) {
 					//tastatura
-					//TODO
 					fgets(buffer, BUFLEN, stdin);
 					if(strstr(buffer, "quit") != NULL) {
 						printf("Server is shutting down.\n");
@@ -131,7 +141,7 @@ int main(int argc, char *argv[])
 					}
 
 				} else if(i == sockfd) {
-					//Conexiune noua
+					//Conexiune noua pe TCP
 					socklen_t clen = sizeof(cli_addr);
 					newsockfd = accept(sockfd, (struct sockaddr*) &cli_addr, &clen);
 					FD_SET(newsockfd, &tmp_fds);
@@ -139,14 +149,43 @@ int main(int argc, char *argv[])
 						fdmax = newsockfd;
 					}
 
+				} else if(i == sockfd_udp) {
+					//Conexiune pe UDP, deci trebuie facut unlock
+					struct sockaddr_in client_addr;
+					socklen_t length = sizeof(client_addr);
+					recvfrom(sockfd_udp, buffer, BUFLEN, 0, (struct sockaddr*) &client_addr, &length);
+					if(strcmp(buffer, "unlock\n") == 0) {
+						memset(buffer, 0, BUFLEN);
+						sprintf(buffer, "Trimite parola secreta\n");
+					} else {
+						sscanf(buffer, "%d %s", &nr_card, parola);
+						current = findClient(n, client, nr_card);
+						memset(buffer, 0, BUFLEN);
+						if(current < 0) {
+							//Nu exista client cu acest numar de card
+							sprintf(buffer, "-4 : Numar card inexistent\n");
+						} else if(strcmp(client[current].parola, parola) == 0) {
+							//Parola corecta
+							if(client[current].attempts_left == 0) {
+								client[current].attempts_left = 3;
+								sprintf(buffer, "Client deblocat\n");
+							} else {
+								sprintf(buffer, "-6 : Operatie esuata\n");
+							}
+						} else {
+							//Parola gresita
+							sprintf(buffer, "-7 : Deblocare esuata\n");
+						}
+					}
+
+					sendto(sockfd_udp, buffer, BUFLEN, 0, (struct sockaddr*) &client_addr, sizeof(client_addr));
+					
 				} else {
 					//Un client deja existent interactioneaza cu serverul
 					if(read(i, buffer, BUFLEN) == 0) {
 						//Clientul s-a deconectat
 						FD_CLR(i, &tmp_fds);
 					} else {
-
-						//printf("[SERVER] %s\n", buffer);
 
 						if(strstr(buffer, "I'm going to disconnect.") != NULL) {
 							FD_CLR(i, &tmp_fds);
@@ -248,7 +287,6 @@ int main(int argc, char *argv[])
 								sprintf(buffer, "Suma depusa cu succes\n");
 								write(i, buffer, strlen(buffer)+1);
 								break;
-
 							case 7:
 								//quit
 								current = findClientBySocket(n, client, i);
@@ -257,7 +295,7 @@ int main(int argc, char *argv[])
 								FD_CLR(i, &tmp_fds);
 								break;
 							default:
-								printf("Not yet implemented :(\n");
+								printf("Comanda invalida de la client\n");
 								break;
 						}
 					}

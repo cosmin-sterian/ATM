@@ -1,0 +1,110 @@
+login 2342342 2323
+ATM> -4 : Numar card inexistent
+
+unlock
+UNLOCK> Trimite parola secreta
+asdadasd
+UNLOCK> -4 : Numar card inexistent
+
+login 456123 8799
+ATM> Welcome Popovici George
+
+logout
+ATM> Deconectare de la bancomat!
+
+unlock
+UNLOCK> Trimite parola secreta
+asdadasdas
+UNLOCK> -7 : Deblocare esuata
+
+unlock
+UNLOCK> Trimite parola secreta
+qwerty
+UNLOCK> -6 : Operatie esuata
+
+login 456123 8799
+ATM> Welcome Popovici George
+
+login 45234234 234234
+-2 : Sesiune deja deschisa
+
+listsold
+ATM> 9000.00
+
+getmoney 5
+ATM> -9 : Suma nu este multiplu de 10
+
+getmoney 10
+ATM> Suma 10 retrasa cu succes
+
+putmoney 22.13
+ATM> Suma depusa cu succes
+
+listsold
+ATM> 9012.13
+
+getmoney 9002
+ATM> -9 : Suma nu este multiplu de 10
+
+getmoney 10000
+ATM> -8 : Fonduri insuficiente
+listsold
+ATM> 9012.13
+
+logout
+ATM> Deconectare de la bancomat!
+
+unlock
+UNLOCK> Trimite parola secreta
+asdadasdasd
+UNLOCK> -7 : Deblocare esuata
+
+unlock
+UNLOCK> Trimite parola secreta
+qwerty
+UNLOCK> -6 : Operatie esuata
+
+login 456123 8799
+ATM> Welcome Popovici George
+
+logout
+ATM> Deconectare de la bancomat!
+
+login 456123 8888
+ATM> -3 : Pin gresit
+
+login 456123 90999
+ATM> -3 : Pin gresit
+
+login 456123 8888
+ATM> -5 : Card blocat
+
+login 456123 9999
+ATM> -5 : Card blocat
+
+logout
+-1 : Clientul nu este autentificat
+
+listsold
+-1 : Clientul nu este autentificat
+
+unlock
+UNLOCK> Trimite parola secreta
+asdasdasd
+UNLOCK> -7 : Deblocare esuata
+
+unlock
+UNLOCK> Trimite parola secreta
+qwerty
+UNLOCK> Client deblocat
+
+login 456123 8799
+ATM> Welcome Popovici George
+
+logout
+ATM> Deconectare de la bancomat!
+
+listsold
+-1 : Clientul nu este autentificat
+
+quit

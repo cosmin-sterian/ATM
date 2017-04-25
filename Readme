@@ -1,0 +1,10 @@
+An ATM server using TCP & UDP sockets to communicate with clients.
+
+The TCP socket is used for the following commands:
+	- login <card_no> <PIN code> - the client logs in with the specified card number and PIN code
+	- logout - the client is logged out
+	- listsold
+	- getmoney <sum> - the client withdraws the specified sum(must be multiple of 10)
+	- putmoney <sum> - the client deposits the specified sum
+
+The UDP socket is used for the 'unlock' command, allowing the client to unlock his card using his secret password if the wrong PIN code was used three times in a row.

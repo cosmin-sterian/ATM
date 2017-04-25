@@ -1,0 +1,16 @@
+login 456123 8799
+ATM> Welcome Popovici George
+
+listsold
+ATM> 9000.00
+
+logout
+ATM> Deconectare de la bancomat!
+
+logout
+-1 : Clientul nu este autentificat
+
+listsold
+-1 : Clientul nu este autentificat
+
+quit

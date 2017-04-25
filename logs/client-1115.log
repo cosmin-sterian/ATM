@@ -1,0 +1,54 @@
+login 456123 8799
+ATM> Welcome Popovici George
+
+listsold
+ATM> 9000.00
+
+putmoney 0.10
+ATM> Suma depusa cu succes
+
+getmoney 6000
+ATM> Suma 6000 retrasa cu succes
+
+listsold
+ATM> 3000.10
+
+putmoney 2040
+ATM> Suma depusa cu succes
+
+putmoney 40.10
+ATM> Suma depusa cu succes
+
+listsold
+ATM> 5080.20
+
+getmoney 40
+ATM> Suma 40 retrasa cu succes
+
+listsold
+ATM> 5040.20
+
+getmoney 45
+ATM> -9 : Suma nu este multiplu de 10
+
+listsold
+ATM> 5040.20
+
+logout
+ATM> Deconectare de la bancomat!
+
+listsold
+-1 : Clientul nu este autentificat
+
+putmoney 45.11
+-1 : Clientul nu este autentificat
+
+getmoney 10
+-1 : Clientul nu este autentificat
+
+listsold
+-1 : Clientul nu este autentificat
+
+logout
+-1 : Clientul nu este autentificat
+

@@ -46,15 +46,23 @@ int main(int argc, char *argv[])
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
-        error("ERROR opening socket");
+        error("ERROR opening TCP socket");
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(atoi(argv[2]));
     inet_aton(argv[1], &serv_addr.sin_addr);
 
 
-    if (connect(sockfd,(struct sockaddr*) &serv_addr,sizeof(serv_addr)) < 0)
-        error("ERROR connecting");
+    if (connect(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0)
+        error("ERROR connecting TCP");
+
+    //UDP
+    int sockfd_udp = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sockfd_udp < 0)
+    	error("ERROR opening UDP socket");
+
+    if(connect(sockfd_udp, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0)
+    	error("ERROR connecting UDP");
 
     fd_set read_fds, tmp_fds; //Am nevoie de un temp pentru ca altfel nu mai functioneaza bine multiplexarea, nu am idee de ce
 
@@ -62,12 +70,17 @@ int main(int argc, char *argv[])
 	FD_ZERO(&tmp_fds);
     FD_SET(0, &read_fds);
     FD_SET(sockfd, &read_fds);
+    FD_SET(sockfd_udp, &read_fds);
+    int maxfd = (sockfd > sockfd_udp) ? sockfd : sockfd_udp;
 
 	int logged_in = 0, quit = 0;
+	int last_card = -1;
+	socklen_t serv_addr_len = sizeof(serv_addr);
+	char aux[BUFLEN];
 
 	while(1) {
 		tmp_fds = read_fds;
-		select(sockfd+1, &tmp_fds, NULL, NULL, NULL);
+		select(maxfd+1, &tmp_fds, NULL, NULL, NULL);
 		if(FD_ISSET(0, &tmp_fds)) {
 			//Citire de la tastatura
 			memset(buffer, 0, BUFLEN);
@@ -91,6 +104,8 @@ int main(int argc, char *argv[])
 				case 1:	//login
 					if(logged_in == 0) {
 						write(sockfd, buffer, strlen(buffer)+1);
+						sscanf(strchr(buffer, ' ')+1, "%d", &last_card);
+
 					} else {
 						//TODO eroare -2 deja logat
 						fprintf(log, "-2 : Sesiune deja deschisa\n\n");
@@ -109,19 +124,29 @@ int main(int argc, char *argv[])
 				case 5: //putmoney
 					write(sockfd, buffer, strlen(buffer)+1);
 					break;
-
+				case 6:	//unlock
+					sendto(sockfd_udp, buffer, strlen(buffer)+1, 0, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
+					break;
 				case 7:	//quit
 					write(sockfd, buffer, strlen(buffer)+1);
 					quit = 1;
 					break;
 				default:
-					printf("Not yet implemented :(");
+					//Trimit parola pe UDP
+					memset(aux, 0, BUFLEN);
+					sprintf(aux, "%d %s", last_card, buffer);
+					sendto(sockfd_udp, aux, strlen(aux)+1, 0, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
 					break;
 			}
 
-		} else {
-			//Primesc informatii de la server
+		} else if(FD_ISSET(sockfd_udp, &tmp_fds)) {
+			//Primesc informatii pe UDP
+			if(recvfrom(sockfd_udp, buffer, BUFLEN, 0, (struct sockaddr*) &serv_addr, &serv_addr_len) > 0) {
+				printUDP(log, buffer);
+			}
 
+		} else {
+			//Primesc informatii pe TCP
 
 			if(recv(sockfd, buffer, BUFLEN, 0) == 0) {
 				error("[Client] Server closed the connection");
@@ -132,8 +157,6 @@ int main(int argc, char *argv[])
 				}
 
 				printTCP(log, buffer);
-
-				//printf("[Client]: %s", buffer);
 
 				if(strstr(buffer, "Welcome") != NULL) {
 					logged_in = 1;
