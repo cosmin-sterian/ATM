@@ -7,6 +7,7 @@ typedef struct clients {
 	double sold;
 	int logged_in;
 	int attempts_left;
+	int socket;
 } clients;
 
 int checkInput(char *string) {
@@ -27,12 +28,4 @@ int checkInput(char *string) {
 		return 7;	//quit
 
 	return 0;	//eroare
-}
-
-
-void debugPrint(clients *client, int n) {
-	int i;
-	for(i = 0; i < n; i++) {
-		printf("Nume: %s, Prenume: %s, Card: %d, Pin: %d, Parola: %s, Sold: %.2f, logged_in: %d,%d\n", client[i].nume, client[i].prenume, client[i].nr_card, client[i].pin, client[i].parola, client[i].sold, client[i].logged_in, client[i].attempts_left);
-	}
 }

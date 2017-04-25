@@ -24,6 +24,7 @@ clients* readData(FILE *in, int n) {
 		fscanf(in, "%s %s %d %d %s %lf", client[i].nume, client[i].prenume, &(client[i].nr_card), &(client[i].pin), client[i].parola, &(client[i].sold));
 		client[i].logged_in = 0;
 		client[i].attempts_left = 3;
+		client[i].socket = -1;
 	}
 	return client;
 }
@@ -32,10 +33,17 @@ int findClient(int n, clients* client, int nr_card) {
 	int i;
 	for(i = 0; i < n; i++) {
 		if(client[i].nr_card == nr_card)
-			break;
+			return i;
 	}
-	if(i < n)
-		return i;
+	return -1;	//eroare
+}
+
+int findClientBySocket(int n, clients* client, int socket) {
+	int i;
+	for(i = 0; i < n; i++) {
+		if(client[i].socket == socket)
+			return i;
+	}
 	return -1;	//eroare
 }
 
@@ -86,8 +94,6 @@ int main(int argc, char *argv[])
 	 clients *client = readData(in, n);
 	 fclose(in);
 
-	 debugPrint(client, n);
-
      // main loop
 	while (1) {
 		tmp_fds = read_fds;
@@ -111,8 +117,10 @@ int main(int argc, char *argv[])
 						memset(buffer, 0, BUFLEN);
 						sprintf(buffer, "Server is shutting down.");
 						for(j = 1; j <= fdmax; j++) {
-							write(j, buffer, strlen(buffer)+1);
-							FD_CLR(j, &tmp_fds);
+							if(j != sockfd && FD_ISSET(j, &read_fds)) {
+								write(j, buffer, strlen(buffer)+1);
+								FD_CLR(j, &tmp_fds);
+							}
 						}
 						break;
 					} else {
@@ -136,6 +144,7 @@ int main(int argc, char *argv[])
 					} else {
 
 						//printf("[SERVER] %s\n", buffer);
+
 						if(strstr(buffer, "I'm going to disconnect.") != NULL) {
 							FD_CLR(i, &tmp_fds);
 							continue;
@@ -149,7 +158,7 @@ int main(int argc, char *argv[])
 								if(current == -1) {
 									//Alt card decat cele primite in users_data_file
 									memset(buffer, 0, BUFLEN);
-									sprintf(buffer, "ATM> -4 : Numar card inexistent\n");
+									sprintf(buffer, "-4 : Numar card inexistent\n");
 									write(i, buffer, strlen(buffer)+1);
 									continue;
 								}
@@ -157,14 +166,14 @@ int main(int argc, char *argv[])
 								if(client[current].logged_in == 1) {
 									//Clientul este deja logat in alta parte(daca era de la aceeasi conexiune, s-ar fi tratat cazul local)
 									memset(buffer, 0, BUFLEN);
-									sprintf(buffer, "ATM> -2 : Sesiune deja deschisa\n");
+									sprintf(buffer, "-2 : Sesiune deja deschisa\n\n");
 									write(i, buffer, strlen(buffer)+1);
 								} else {
 									//Prima autentificare cu acest card
 									if(client[current].attempts_left == 0) {
 										//Card blocat
 										memset(buffer, 0, BUFLEN);
-										sprintf(buffer, "ATM> -5 : Card blocat\n");
+										sprintf(buffer, "-5 : Card blocat\n");
 										write(i, buffer, strlen(buffer)+1);
 
 									} else {
@@ -174,14 +183,20 @@ int main(int argc, char *argv[])
 											//Pin invalid
 											(client[current].attempts_left)--;
 											memset(buffer, 0, BUFLEN);
-											sprintf(buffer, "ATM> -3 : Pin gresit\n");
+											if(client[current].attempts_left == 0) {
+												sprintf(buffer, "-5 : Card blocat\n");
+											} else {
+												sprintf(buffer, "-3 : Pin gresit\n");
+											}
 											write(i, buffer, strlen(buffer)+1);
 
 										} else {
 											//Pin corect
 											client[current].logged_in = 1;
+											client[current].attempts_left = 3;
+											client[current].socket = i;	//Conectat de pe socketul curent, util pentru cand voi primi comanda logout de la acest socket sa stiu care card trebuie delogat
 											memset(buffer, 0, BUFLEN);
-											sprintf(buffer, "ATM> Welcome %s %s\n", client[current].nume, client[current].prenume);
+											sprintf(buffer, "Welcome %s %s\n", client[current].nume, client[current].prenume);
 											write(i, buffer, strlen(buffer)+1);
 										}
 									}
@@ -189,7 +204,13 @@ int main(int argc, char *argv[])
 								break;
 							case 2:
 								//logout
-
+								current = findClientBySocket(n, client, i);
+								//Am gasit cardul/contul care trebuie delogat
+								client[current].logged_in = 0;
+								memset(buffer, 0, BUFLEN);
+								sprintf(buffer, "Deconectare de la bancomat!\n");
+								write(i, buffer, strlen(buffer)+1);
+								break;
 							default:
 								printf("Not yet implemented :(\n");
 								break;
