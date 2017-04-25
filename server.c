@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
      FD_SET(0, &read_fds);
      fdmax = sockfd;
 	 int i, n, current, skip = 0, j;
-	 int nr_card, pin;
+	 int nr_card, pin, suma;
 
 	 FILE *in = fopen(argv[2], "r");
 	 fscanf(in, "%d", &n);
@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 
 		nr_card = 0;
 		pin = 0;
+		suma = 0;
 
 		for(i = 0; i <= fdmax; i++) {
 			if(FD_ISSET(i, &read_fds)) {
@@ -209,6 +210,31 @@ int main(int argc, char *argv[])
 								client[current].logged_in = 0;
 								memset(buffer, 0, BUFLEN);
 								sprintf(buffer, "Deconectare de la bancomat!\n");
+								write(i, buffer, strlen(buffer)+1);
+								break;
+							case 3:
+								//listsold
+								current = findClientBySocket(n, client, i);
+								memset(buffer, 0, BUFLEN);
+								sprintf(buffer, "%.2f\n", client[current].sold);
+								write(i, buffer, strlen(buffer)+1);
+								break;
+							case 4:
+								//getmoney
+								current = findClientBySocket(n, client, i);
+								sscanf(strchr(buffer, ' ')+1, "%d", &suma);
+								memset(buffer, 0, BUFLEN);
+								if(suma % 10 != 0) {
+									//Nu este multiplu de 10
+									sprintf(buffer, "-9 : Suma nu este multiplu de 10\n");
+								} else if(suma > client[current].sold) {
+									//Fonduri insuficiente
+									sprintf(buffer, "-8 : Fonduri insuficiente");
+								} else {
+									//Fonduri suficiente si suma este multiplu de 10
+									client[current].sold -= suma;
+									sprintf(buffer, "Suma %d retrasa cu succes\n", suma);
+								}
 								write(i, buffer, strlen(buffer)+1);
 								break;
 							default:

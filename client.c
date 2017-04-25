@@ -79,6 +79,11 @@ int main(int argc, char *argv[])
 				break;
 			}
 
+			if(logged_in == 0 && checkInput(buffer) > 1 && checkInput(buffer) < 6) {
+				fprintf(log, "-1 : Clientul nu este autentificat\n\n");
+				continue;
+			}
+
 			switch(checkInput(buffer)) {
 				case 1:	//login
 					if(logged_in == 0) {
@@ -89,12 +94,14 @@ int main(int argc, char *argv[])
 					}
 					break;
 				case 2:	//logout
-					if(logged_in == 0) {
-						fprintf(log, "-1 : Clientul nu este autentificat\n\n");
-					} else {
-						write(sockfd, buffer, strlen(buffer)+1);
-						logged_in = 0;
-					}
+					write(sockfd, buffer, strlen(buffer)+1);
+					logged_in = 0;
+					break;
+				case 3:	//listsold
+					write(sockfd, buffer, strlen(buffer)+1);
+					break;
+				case 4:	//getmoney
+					write(sockfd, buffer, strlen(buffer)+1);
 					break;
 				default:
 					printf("Not yet implemented :(");
