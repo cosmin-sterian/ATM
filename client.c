@@ -22,7 +22,10 @@ void printTCP(FILE *log, char *string) {
 }
 
 void printUDP(FILE *log, char *string) {
-	fprintf(log, "UNLOCK> %s\n", string);
+	if(strstr(string, "Trimite parola secreta") == NULL) {
+		sprintf(string, "%s\n", string);
+	}
+	fprintf(log, "UNLOCK> %s", string);
 }
 
 int main(int argc, char *argv[])
@@ -60,7 +63,7 @@ int main(int argc, char *argv[])
     FD_SET(0, &read_fds);
     FD_SET(sockfd, &read_fds);
 
-	int logged_in = 0;
+	int logged_in = 0, quit = 0;
 
 	while(1) {
 		tmp_fds = read_fds;
@@ -103,6 +106,14 @@ int main(int argc, char *argv[])
 				case 4:	//getmoney
 					write(sockfd, buffer, strlen(buffer)+1);
 					break;
+				case 5: //putmoney
+					write(sockfd, buffer, strlen(buffer)+1);
+					break;
+
+				case 7:	//quit
+					write(sockfd, buffer, strlen(buffer)+1);
+					quit = 1;
+					break;
 				default:
 					printf("Not yet implemented :(");
 					break;
@@ -129,6 +140,10 @@ int main(int argc, char *argv[])
 				}
 			}
 
+		}
+
+		if(quit == 1) {
+			break;
 		}
 	}
 

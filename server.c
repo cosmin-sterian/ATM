@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
      fdmax = sockfd;
 	 int i, n, current, skip = 0, j;
 	 int nr_card, pin, suma;
+	 double suma_depusa;
 
 	 FILE *in = fopen(argv[2], "r");
 	 fscanf(in, "%d", &n);
@@ -105,6 +106,7 @@ int main(int argc, char *argv[])
 		nr_card = 0;
 		pin = 0;
 		suma = 0;
+		suma_depusa = 0;
 
 		for(i = 0; i <= fdmax; i++) {
 			if(FD_ISSET(i, &read_fds)) {
@@ -236,6 +238,23 @@ int main(int argc, char *argv[])
 									sprintf(buffer, "Suma %d retrasa cu succes\n", suma);
 								}
 								write(i, buffer, strlen(buffer)+1);
+								break;
+							case 5:
+								//putmoney
+								current = findClientBySocket(n, client, i);
+								sscanf(strchr(buffer, ' ')+1, "%lf", &suma_depusa);
+								client[current].sold += suma_depusa;
+								memset(buffer, 0, BUFLEN);
+								sprintf(buffer, "Suma depusa cu succes\n");
+								write(i, buffer, strlen(buffer)+1);
+								break;
+
+							case 7:
+								//quit
+								current = findClientBySocket(n, client, i);
+								client[current].logged_in = 0;
+								client[current].socket = -1;
+								FD_CLR(i, &tmp_fds);
 								break;
 							default:
 								printf("Not yet implemented :(\n");
